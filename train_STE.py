@@ -24,7 +24,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "3"  ### set the gpu as No....
 parser = argparse.ArgumentParser()
 parser.add_argument('--numOfWorkers', type=int, default=1,
                     help='workers for dataloader')
-parser.add_argument('--modelsSavePath', type=str, default='/root/autodl-tmp',
+parser.add_argument('--modelsSavePath', type=str, default='~/tmp',
                     help='path for saving models')
 parser.add_argument('--logPath', type=str,
                     default='')
@@ -32,9 +32,9 @@ parser.add_argument('--batchSize', type=int, default=16)
 parser.add_argument('--loadSize', type=int, default=512,
                     help='image loading size')
 parser.add_argument('--dataRoot', type=str,
-                    default='/root/ytest/EraseNet/example/all_images')
+                    default='/home/yukai/data/train/all_images')
 parser.add_argument('--pretrained', type=str, default='', help='pretrained models for finetuning')
-parser.add_argument('--num_epochs', type=int, default=5, help='epochs')
+parser.add_argument('--num_epochs', type=int, default=500, help='epochs')
 args = parser.parse_args()
 
 
