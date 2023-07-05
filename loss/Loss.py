@@ -134,8 +134,9 @@ class LossWithGAN_STE(nn.Module):
         # 计算感知损失，使用了L1损失函数
         prcLoss = 0.0
         for i in range(3):
-            prcLoss += 0.01 * self.l1(feat_output[i], feat_gt[i])
-            prcLoss += 0.01 * self.l1(feat_output_comp[i], feat_gt[i])
+
+            prcLoss += 0.05 * self.l1(feat_output[i], feat_gt[i])
+            prcLoss += 0.05 * self.l1(feat_output_comp[i], feat_gt[i])
 
         # 计算风格损失，使用了格拉姆矩阵和L1损失函数
         styleLoss = 0.0

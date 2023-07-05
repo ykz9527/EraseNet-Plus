@@ -14,19 +14,19 @@ from models.sa_gan import STRnet2
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--numOfWorkers', type=int, default=0,
+parser.add_argument('--numOfWorkers', type=int, default=2,
                     help='workers for dataloader')
-parser.add_argument('--modelsSavePath', type=str, default='',
+parser.add_argument('--modelsSavePath', type=str, default='/root/autodl-tmp/test',
                     help='path for saving models')
 parser.add_argument('--logPath', type=str,
                     default='')
-parser.add_argument('--batchSize', type=int, default=16)
+parser.add_argument('--batchSize', type=int, default=1)
 parser.add_argument('--loadSize', type=int, default=512,
                     help='image loading size')
 parser.add_argument('--dataRoot', type=str,
-                    default='')
-parser.add_argument('--pretrained',type=str, default='', help='pretrained models for finetuning')
-parser.add_argument('--savePath', type=str, default='./results/sn_tv/')
+                    default='/root/autodl-tmp/test/all_images')
+parser.add_argument('--pretrained',type=str, default='/root/autodl-tmp/STE_260.pth', help='pretrained models for finetuning')
+parser.add_argument('--savePath', type=str, default='/root/autodl-tmp/test/results/sn_tv/')
 args = parser.parse_args()
 
 cuda = torch.cuda.is_available()
@@ -83,7 +83,6 @@ for imgs, gt, masks, path in (Erase_data):
     gt = gt.data.cpu()
     mask = masks.data.cpu()
     g_image_with_mask = gt * (mask) + g_image * (1- mask)
-
     save_image(g_image_with_mask, result_with_mask+path[0])
     save_image(g_image, result_straight+path[0])
 

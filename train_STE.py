@@ -16,25 +16,26 @@ from data.dataloader import ErasingData
 from loss.Loss import LossWithGAN_STE
 from models.Model import VGG16FeatureExtractor
 from models.sa_gan import STRnet2
+import subprocess
 
-torch.set_num_threads(5)
+torch.set_num_threads(4)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"  ### set the gpu as No....
+#os.environ["CUDA_VISIBLE_DEVICES"] = "1"  ### set the gpu as No....
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--numOfWorkers', type=int, default=1,
+parser.add_argument('--numOfWorkers', type=int, default=4,
                     help='workers for dataloader')
-parser.add_argument('--modelsSavePath', type=str, default='~/tmp',
+parser.add_argument('--modelsSavePath', type=str, default='/root/autodl-tmp/',
                     help='path for saving models')
 parser.add_argument('--logPath', type=str,
-                    default='')
-parser.add_argument('--batchSize', type=int, default=16)
+                    default='/root/autodl-tmp/log/')
+parser.add_argument('--batchSize', type=int, default=2)
 parser.add_argument('--loadSize', type=int, default=512,
                     help='image loading size')
 parser.add_argument('--dataRoot', type=str,
-                    default='/home/yukai/data/train/all_images')
+                    default='/root/autodl-tmp/train/all_images')
 parser.add_argument('--pretrained', type=str, default='', help='pretrained models for finetuning')
-parser.add_argument('--num_epochs', type=int, default=500, help='epochs')
+parser.add_argument('--num_epochs', type=int, default=350, help='epochs')
 args = parser.parse_args()
 
 
@@ -44,7 +45,6 @@ def visual(image):
     im = image.transpose(1, 2).transpose(2, 3).detach().cpu().numpy()
     # 将NumPy数组转换为图像，并显示出来
     Image.fromarray(im[0].astype(np.uint8)).show()
-
 
 # 判断是否有可用的CUDA加速设备，并打印相关信息
 cuda = torch.cuda.is_available()
@@ -86,8 +86,10 @@ numOfGPUs = torch.cuda.device_count()
 
 # 判断是否有可用的CUDA加速设备,有则将模型移动到CUDA设备上
 if cuda:
+    print('cuda!')
     netG = netG.cuda()
     if numOfGPUs > 1:
+        print('numOfGPUs > 1!')
         # 使用DataParallel将模型包装起来，以实现多GPU并行计算
         netG = nn.DataParallel(netG, device_ids=range(numOfGPUs))
 
@@ -108,6 +110,7 @@ if cuda:
         criterion = nn.DataParallel(criterion, device_ids=range(numOfGPUs))
 
 print('OK!')
+print(torch.cuda.is_available())
 # 设置训练的总轮数
 num_epochs = args.num_epochs
 # 设置PyTorch自动求导时检测异常的模式为True
@@ -138,14 +141,14 @@ for i in range(1, num_epochs + 1):
         G_optimizer.zero_grad()
         # 反向传播计算梯度
         # https://blog.csdn.net/MilanKunderaer/article/details/121425885
-        #G_loss.backward()
-        loss1 = G_loss.detach_().requires_grad_(True)
-        loss1.backward()
+        G_loss.backward()
+        # loss1 = G_loss.detach_().requires_grad_(True)
+        # loss1.backward()
         # 更新生成器的参数
         G_optimizer.step()
 
         # 打印生成器的损失
-        print('[{}/{}] Generator Loss of epoch{} is {}'.format(k, len(Erase_data), i, loss1.item()))
+        print('[{}/{}] Generator Loss of epoch{} is {}'.format(k, len(Erase_data), i, G_loss.item()))
 
         # 更新计数器
         count += 1
@@ -156,5 +159,18 @@ for i in range(1, num_epochs + 1):
             torch.save(netG.module.state_dict(), args.modelsSavePath +
                        '/STE_{}.pth'.format(i))
         else:
-            torch.save(netG.state_dict(), args.modelsSavePath +
-                       '/STE_{}.pth'.format(i))
+            pretrain = args.modelsSavePath + '/STE_{}.pth'.format(i)
+            logFile = args.modelsSavePath + '/STE_{}.out'.format(i)
+            torch.save(netG.state_dict(), pretrain)
+            # 构建命令行命令
+            commandTest = f"python3 test_image_STE.py --dataRoot '/root/autodl-tmp/test/all_images' --batchSize '1' --pretrain '{pretrain}' --savePath '/root/autodl-tmp/test/results/sn_tv/'"
+            # 执行命令
+            subprocess.call(commandTest, shell=True)
+
+            commandEvaluation = f"python3 evaluatuion.py --target_path '/root/autodl-tmp/test/results/sn_tv/WithMaskOutput/' --gt_path '/root/autodl-tmp/test/all_labels' --logFile '{logFile}'"
+            subprocess.call(commandEvaluation, shell=True)
+
+            commandRemove = f"rm -rf /root/autodl-tmp/test/results/*"
+            subprocess.call(commandRemove, shell=True)
+
+

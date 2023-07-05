@@ -12,14 +12,18 @@ from torch.utils.data import DataLoader
 from data.dataloader import devdata
 from scipy import signal, ndimage
 import gauss
+import logging
 
-
+# ssim 0.8 psim 30左右
 parser = argparse.ArgumentParser()
-parser.add_argument('--target_path', type=str, default='',
+parser.add_argument('--target_path', type=str, default='/root/autodl-tmp/test/results/sn_tv/WithMaskOutput/',
                     help='results')
-parser.add_argument('--gt_path', type=str, default='',
+parser.add_argument('--gt_path', type=str, default='/root/autodl-tmp/test/all_labels',
                     help='labels')
+parser.add_argument('--logFile', type=str, help='Path to log file')
 args = parser.parse_args()
+# 配置日志记录
+logging.basicConfig(filename=args.logFile, level=logging.INFO, format='%(message)s')
 
 sum_psnr = 0
 sum_ssim = 0
@@ -120,7 +124,7 @@ def visual(image):
 
 imgData = devdata(dataRoot=img_path, gtRoot=gt_path)
 data_loader = DataLoader(imgData, batch_size=1, shuffle=True, num_workers=0, drop_last=False)
-
+print(len(data_loader))
 for k, (img,lbl,path) in enumerate(data_loader):
 	##import pdb;pdb.set_trace()
 	mse = ((lbl - img)**2).mean()
@@ -168,10 +172,17 @@ for k, (img,lbl,path) in enumerate(data_loader):
 	print(' pCEPS: ' , pCEPs)
 	sum_pCEPS += pCEPs
 
-print(sum_psnr)
-print('avg mse:', sum_mse / count)
-print('average psnr:', sum_psnr / count)
-print('average ssim:', sum_ssim / count)
-print('average AGE:', sum_AGE / count)
-print('average pEPS:', sum_pEPS / count)
-print('average pCEPS:', sum_pCEPS / count)
+# print(sum_psnr)
+# print('avg mse:', sum_mse / count)
+# print('average psnr:', sum_psnr / count)
+# print('average ssim:', sum_ssim / count)
+# print('average AGE:', sum_AGE / count)
+# print('average pEPS:', sum_pEPS / count)
+# print('average pCEPS:', sum_pCEPS / count)
+logging.info(f"psnr: {sum_psnr}")
+logging.info(f"average mse: {sum_mse / count}")
+logging.info(f"average psnr: {sum_psnr / count}")
+logging.info(f"average ssim: {sum_ssim / count}")
+logging.info(f"average AGE: {sum_AGE / count}")
+logging.info(f"average pEPS: {sum_pEPS / count}")
+logging.info(f"average pCEPS: {sum_pCEPS / count}")
