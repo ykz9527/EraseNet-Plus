@@ -25,7 +25,7 @@ parser.add_argument('--loadSize', type=int, default=512,
                     help='image loading size')
 parser.add_argument('--dataRoot', type=str,
                     default='/root/autodl-tmp/test/all_images')
-parser.add_argument('--pretrained',type=str, default='/root/autodl-tmp/STE_260.pth', help='pretrained models for finetuning')
+parser.add_argument('--pretrained',type=str, default='/root/autodl-tmp/res3/STE_180.pth', help='pretrained models for finetuning')
 parser.add_argument('--savePath', type=str, default='/root/autodl-tmp/test/results/sn_tv/')
 args = parser.parse_args()
 
@@ -69,7 +69,7 @@ for param in netG.parameters():
     param.requires_grad = False
 
 print('OK!')
-
+print(args.pretrained)
 import time
 start = time.time()
 netG.eval()

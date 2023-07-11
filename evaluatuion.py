@@ -14,13 +14,13 @@ from scipy import signal, ndimage
 import gauss
 import logging
 
-# ssim 0.8 psim 30左右
+# ssim 0.8 psnr 30左右
 parser = argparse.ArgumentParser()
 parser.add_argument('--target_path', type=str, default='/root/autodl-tmp/test/results/sn_tv/WithMaskOutput/',
                     help='results')
 parser.add_argument('--gt_path', type=str, default='/root/autodl-tmp/test/all_labels',
                     help='labels')
-parser.add_argument('--logFile', type=str, help='Path to log file')
+parser.add_argument('--logFile',default='/root/autodl-tmp/test/test.out', type=str, help='Path to log file')
 args = parser.parse_args()
 # 配置日志记录
 logging.basicConfig(filename=args.logFile, level=logging.INFO, format='%(message)s')
@@ -39,7 +39,7 @@ l1_loss = 0
 img_path = args.target_path
 gt_path = args.gt_path
 
-
+# 计算结构相似性(SSIM)指数的函数
 def ssim(img1, img2, cs_map=False):
     """Return the Structural Similarity Map corresponding to input images img1 
     and img2 (images are assumed to be uint8)
@@ -76,6 +76,7 @@ def ssim(img1, img2, cs_map=False):
                     (sigma1_sq + sigma2_sq + C2))
 
 
+# 计算多尺度结构相似性(MSSSIM)指数的函数
 def msssim(img1, img2):
     """This function implements Multi-Scale Structural Similarity (MSSSIM) Image 
     Quality Assessment according to Z. Wang's "Multi-scale structural similarity 
@@ -110,6 +111,7 @@ def msssim(img1, img2):
     mssim_power = np.power(np.abs(mssim[level - 1]), weight[level - 1])
     return np.prod(sign_mcs * mcs_power) * sign_mssim * mssim_power
 
+
 def ImageTransform(loadSize, cropSize):
     return Compose([
         Resize(size=loadSize, interpolation=Image.BICUBIC),
@@ -122,14 +124,19 @@ def visual(image):
     im =(image).transpose(1,2).transpose(2,3).detach().cpu().numpy()
     Image.fromarray(im[0].astype(np.uint8)).show()
 
+
 imgData = devdata(dataRoot=img_path, gtRoot=gt_path)
 data_loader = DataLoader(imgData, batch_size=1, shuffle=True, num_workers=0, drop_last=False)
 print(len(data_loader))
+# 这部分代码遍历数据加载器中的每个批次，计算输入图像和gt之间的均方误差(MSE)，并累加到sum_mse中。
+# path是图像的路径信息，count用于计数。
 for k, (img,lbl,path) in enumerate(data_loader):
 	##import pdb;pdb.set_trace()
 	mse = ((lbl - img)**2).mean()
 	sum_mse += mse
 	print(path,count, 'mse: ', mse)
+    # 这部分代码检查MSE是否为0，如果为0，则跳过当前批次的处理。
+    # 否则，增加计数count，计算PSNR（峰值信噪比）并将其累加到sum_psnr中。PSNR的计算公式为10 * log10(1 / MSE)。
 	if mse == 0:
 		continue
 	count += 1
@@ -138,7 +145,7 @@ for k, (img,lbl,path) in enumerate(data_loader):
 	print(path,count, ' psnr: ', psnr)
 	#l1_loss += nn.L1Loss()(img, lbl)
 
-
+    # 这部分代码提取了输入图像和gt图像的亮度信息，并计算了亮度之间的差异（即Diff）。根据差异值计算了平均绝对差异(AGE)。
 	R = lbl[0,0,:, :]
 	G = lbl[0,1,:, :]
 	B = lbl[0,2,:, :]
@@ -152,17 +159,22 @@ for k, (img,lbl,path) in enumerate(data_loader):
 	YBC = .299 * R + .587 * G + .114 * B
 	Diff = abs(np.array(YBC*255) - np.array(YGT*255)).round().astype(np.uint8)
 	AGE = np.mean(Diff)
-	print(' AGE: ', AGE) 
+	print(' AGE: ', AGE)
+    # 这部分代码使用前面定义的msssim函数，计算输入图像和gt图像的MSSSIM指数，并将其累加到sum_ssim中。
 	mssim = msssim(np.array(YGT*255), np.array(YBC*255))
 	sum_ssim += mssim
 	print(count, ' ssim:', mssim)
+    # 这部分代码根据设定的阈值，将差异值大于阈值的像素标记为错误(Errors)。
+    # 计算错误像素点的数量(EPs)和比例(pEPs)，并将pEPs累加到sum_pEPS中。
 	threshold = 20
-
 	Errors = Diff > threshold
 	EPs = sum(sum(Errors)).astype(float)
 	pEPs = EPs / float(512*512)
 	print(' pEPS: ' , pEPs)
 	sum_pEPS += pEPs
+    # 这部分代码计算连通错误像素的数量(CEPs)和比例(pCEPs)。
+    # 使用二值形态学的腐蚀操作(ndimage.binary_erosion)对Errors进行处理，以提取连通的错误像素。
+    # structure定义了腐蚀操作的结构元素。CEPs和pCEPs分别是连通错误像素的数量和比例，将它们累加到sum_pCEPS中。
 	########################## CEPs and pCEPs ################################
 	structure = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
 	sum_AGE+=AGE
@@ -172,13 +184,6 @@ for k, (img,lbl,path) in enumerate(data_loader):
 	print(' pCEPS: ' , pCEPs)
 	sum_pCEPS += pCEPs
 
-# print(sum_psnr)
-# print('avg mse:', sum_mse / count)
-# print('average psnr:', sum_psnr / count)
-# print('average ssim:', sum_ssim / count)
-# print('average AGE:', sum_AGE / count)
-# print('average pEPS:', sum_pEPS / count)
-# print('average pCEPS:', sum_pCEPS / count)
 logging.info(f"psnr: {sum_psnr}")
 logging.info(f"average mse: {sum_mse / count}")
 logging.info(f"average psnr: {sum_psnr / count}")

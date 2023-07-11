@@ -25,7 +25,7 @@ torch.set_num_threads(4)
 parser = argparse.ArgumentParser()
 parser.add_argument('--numOfWorkers', type=int, default=4,
                     help='workers for dataloader')
-parser.add_argument('--modelsSavePath', type=str, default='/root/autodl-tmp/',
+parser.add_argument('--modelsSavePath', type=str, default='/root/autodl-tmp/fake',
                     help='path for saving models')
 parser.add_argument('--logPath', type=str,
                     default='/root/autodl-tmp/log/')
@@ -33,8 +33,8 @@ parser.add_argument('--batchSize', type=int, default=2)
 parser.add_argument('--loadSize', type=int, default=512,
                     help='image loading size')
 parser.add_argument('--dataRoot', type=str,
-                    default='/root/autodl-tmp/train/all_images')
-parser.add_argument('--pretrained', type=str, default='', help='pretrained models for finetuning')
+                    default='/root/autodl-tmp/dataset/syn_train/img')
+parser.add_argument('--pretrained', type=str, default='/root/autodl-tmp/fake/STE_150.pth', help='pretrained models for finetuning')
 parser.add_argument('--num_epochs', type=int, default=350, help='epochs')
 args = parser.parse_args()
 
@@ -97,10 +97,10 @@ if cuda:
 count = 1
 
 # 创建一个Adam优化器，用于优化netG模型的参数
-G_optimizer = optim.Adam(netG.parameters(), lr=0.001, betas=(0.5, 0.9))
+G_optimizer = optim.Adam(netG.parameters(), lr=0.0001, betas=(0.5, 0.9))
 
 # 一个损失函数对象
-criterion = LossWithGAN_STE(args.logPath, VGG16FeatureExtractor(), lr=0.001, betasInit=(0.0, 0.9), Lamda=10.0)
+criterion = LossWithGAN_STE(args.logPath, VGG16FeatureExtractor(), lr=0.00001, betasInit=(0.0, 0.9), Lamda=10.0)
 
 if cuda:
     # 损失函数移动到CUDA设备上
@@ -154,7 +154,7 @@ for i in range(1, num_epochs + 1):
         count += 1
 
     # 保存模型的参数
-    if i % 1 == 0:
+    if i % 10 == 0:
         if numOfGPUs > 1:
             torch.save(netG.module.state_dict(), args.modelsSavePath +
                        '/STE_{}.pth'.format(i))

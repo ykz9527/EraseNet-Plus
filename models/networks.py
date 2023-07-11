@@ -11,7 +11,7 @@ class ConvWithActivation(torch.nn.Module):
     """
     SN convolution for spetral normalization conv
     """
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, activation=torch.nn.LeakyReLU(0.2, inplace=False)):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, activation=torch.nn.LeakyReLU(0.2, inplace=True)):
         super(ConvWithActivation, self).__init__()
         self.conv2d = torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias)
         self.conv2d = torch.nn.utils.spectral_norm(self.conv2d)
@@ -30,7 +30,7 @@ class DeConvWithActivation(torch.nn.Module):
     """
     SN convolution for spetral normalization conv
     """
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, activation=torch.nn.LeakyReLU(0.2, inplace=False)):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, activation=torch.nn.LeakyReLU(0.2, inplace=True)):
         super(DeConvWithActivation, self).__init__()
         self.conv2d = torch.nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias)
         self.conv2d = torch.nn.utils.spectral_norm(self.conv2d)

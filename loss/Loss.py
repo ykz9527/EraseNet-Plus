@@ -122,7 +122,7 @@ class LossWithGAN_STE(nn.Module):
         imgs2 = F.interpolate(gt, scale_factor=0.5)
         # 计算多尺度重建损失
         msrloss = 8 * self.l1((1 - mask) * x_o3, (1 - mask) * gt) + 0.8 * self.l1(mask * x_o3, mask * gt) + \
-                  6 * self.l1((1 - masks_b) * x_o2, (1 - masks_b) * imgs2) + 1 * self.l1(masks_b * x_o2,
+                  6 * self.l1((1 - masks_b) * x_o2, (1 - masks_b) * imgs2) + 0.8 * self.l1(masks_b * x_o2,
                                                                                          masks_b * imgs2) + \
                   5 * self.l1((1 - masks_a) * x_o1, (1 - masks_a) * imgs1) + 0.8 * self.l1(masks_a * x_o1,
                                                                                            masks_a * imgs1)

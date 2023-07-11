@@ -76,10 +76,14 @@ class ErasingData(Dataset):
 class devdata(Dataset):
     def __init__(self, dataRoot, gtRoot, loadSize=512):
         super(devdata, self).__init__()
-        self.imageFiles = [join (dataRootK, files) for dataRootK, dn, filenames in walk(dataRoot) \
-            for files in filenames if CheckImageFile(files)]
-        self.gtFiles = [join (gtRootK, files) for gtRootK, dn, filenames in walk(gtRoot) \
-            for files in filenames if CheckImageFile(files)]
+        self.imageFiles = sorted([join(dataRootK, files) for dataRootK, dn, filenames in walk(dataRoot)
+                                  for files in filenames if CheckImageFile(files)])
+        self.gtFiles = sorted([join(gtRootK, files) for gtRootK, dn, filenames in walk(gtRoot)
+                               for files in filenames if CheckImageFile(files)])
+        # self.imageFiles = [join(dataRootK, files) for dataRootK, dn, filenames in walk(dataRoot)
+        #                           for files in filenames if CheckImageFile(files)]
+        # self.gtFiles = [join(gtRootK, files) for gtRootK, dn, filenames in walk(gtRoot)
+        #                        for files in filenames if CheckImageFile(files)]
         self.loadSize = loadSize
         self.ImgTrans = ImageTransform(loadSize)
     
